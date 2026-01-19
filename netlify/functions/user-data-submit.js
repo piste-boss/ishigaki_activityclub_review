@@ -2,20 +2,25 @@ import { createStore } from './_lib/store.js'
 
 const CONFIG_KEY = 'router-config'
 
+export const config = {
+  blobs: true,
+  path: '/.netlify/functions/user-data-submit',
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST,OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type,Authorization',
 }
 
-const jsonResponse = (statusCode, payload = {}) => ({
-  statusCode,
-  headers: {
-    'Content-Type': 'application/json',
-    ...corsHeaders,
-  },
-  body: JSON.stringify(payload),
-})
+const jsonResponse = (statusCode, payload = {}) =>
+  new Response(JSON.stringify(payload), {
+    status: statusCode,
+    headers: {
+      'Content-Type': 'application/json',
+      ...corsHeaders,
+    },
+  })
 
 const sanitizeString = (value) => (typeof value === 'string' ? value.trim() : '')
 
@@ -50,25 +55,23 @@ const getUserDataSettings = (config = {}) => {
   }
 }
 
-export const handler = async (event, context) => {
-  if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 204,
+export default async (req, context) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
       headers: corsHeaders,
-    }
+    })
   }
 
-  if (event.httpMethod !== 'POST') {
+  if (req.method !== 'POST') {
     return jsonResponse(405, { message: 'POSTメソッドのみ利用できます。' })
   }
 
   let payload = {}
-  if (event.body) {
-    try {
-      payload = JSON.parse(event.body)
-    } catch {
-      return jsonResponse(400, { message: 'JSON形式が正しくありません。' })
-    }
+  try {
+    payload = await req.json()
+  } catch {
+    return jsonResponse(400, { message: 'JSON形式が正しくありません。' })
   }
 
   if (!payload || typeof payload !== 'object') {
@@ -82,10 +85,13 @@ export const handler = async (event, context) => {
   const config = await getStoredConfig(context)
   const settings = getUserDataSettings(config)
 
-  const overrideMetadata = typeof payload.metadata === 'object' && payload.metadata ? payload.metadata : {}
+  const overrideMetadata =
+    typeof payload.metadata === 'object' && payload.metadata ? payload.metadata : {}
 
   const submitGasUrl = sanitizeString(settings.submitGasUrl || overrideMetadata.submitGasUrl)
-  const storedSpreadsheetUrl = sanitizeString(settings.spreadsheetUrl || overrideMetadata.spreadsheetUrl)
+  const storedSpreadsheetUrl = sanitizeString(
+    settings.spreadsheetUrl || overrideMetadata.spreadsheetUrl,
+  )
 
   let spreadsheetId = sanitizeString(overrideMetadata.spreadsheetId)
   if (!spreadsheetId && storedSpreadsheetUrl) {
@@ -96,11 +102,15 @@ export const handler = async (event, context) => {
   }
 
   if (!submitGasUrl) {
-    return jsonResponse(400, { message: '店舗情報保存GASエンドポイントが設定されていません。' })
+    return jsonResponse(400, {
+      message: '店舗情報保存GASエンドポイントが設定されていません。',
+    })
   }
 
   if (!spreadsheetId) {
-    return jsonResponse(400, { message: '店舗情報のスプレッドシートIDが取得できませんでした。' })
+    return jsonResponse(400, {
+      message: '店舗情報のスプレッドシートIDが取得できませんでした。',
+    })
   }
 
   const metadata = {

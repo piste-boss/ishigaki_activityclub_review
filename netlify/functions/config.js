@@ -4,6 +4,7 @@ const CONFIG_KEY = 'router-config'
 
 export const config = {
   blobs: true,
+  path: '/.netlify/functions/config',
 }
 
 const sanitizeString = (value) => (typeof value === 'string' ? value.trim() : '')
@@ -341,14 +342,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type',
 }
 
-const jsonResponse = (statusCode, payload = {}) => ({
-  statusCode,
-  headers: {
-    'Content-Type': 'application/json',
-    ...corsHeaders,
-  },
-  body: JSON.stringify(payload),
-})
+const jsonResponse = (statusCode, payload = {}) =>
+  new Response(JSON.stringify(payload), {
+    status: statusCode,
+    headers: {
+      'Content-Type': 'application/json',
+      ...corsHeaders,
+    },
+  })
 
 const toClientConfig = (config) => ({
   ...config,
@@ -442,13 +443,13 @@ const mergeWithDefault = (config = {}, fallback = DEFAULT_CONFIG) => {
   const mergedSurveyResults = {
     spreadsheetUrl: sanitizeString(
       config.surveyResults?.spreadsheetUrl ??
-        fallback.surveyResults?.spreadsheetUrl ??
-        DEFAULT_SURVEY_RESULTS.spreadsheetUrl,
+      fallback.surveyResults?.spreadsheetUrl ??
+      DEFAULT_SURVEY_RESULTS.spreadsheetUrl,
     ),
     endpointUrl: sanitizeString(
       config.surveyResults?.endpointUrl ??
-        fallback.surveyResults?.endpointUrl ??
-        DEFAULT_SURVEY_RESULTS.endpointUrl,
+      fallback.surveyResults?.endpointUrl ??
+      DEFAULT_SURVEY_RESULTS.endpointUrl,
     ),
     apiKey: sanitizeString(
       config.surveyResults?.apiKey ?? fallback.surveyResults?.apiKey ?? DEFAULT_SURVEY_RESULTS.apiKey,
@@ -489,35 +490,35 @@ const mergeWithDefault = (config = {}, fallback = DEFAULT_CONFIG) => {
   }
 }
 
-export const handler = async (event, context) => {
+export default async (req, context) => {
   const store = getConfigStore(context)
 
-  if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 204,
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
       headers: corsHeaders,
-    }
+    })
   }
 
-  if (event.httpMethod === 'GET') {
+  if (req.method === 'GET') {
     const storedConfig = await store.get(CONFIG_KEY, { type: 'json' }).catch(() => null)
     const config = mergeWithDefault(storedConfig || DEFAULT_CONFIG)
     return jsonResponse(200, toClientConfig(config))
   }
 
-  if (event.httpMethod === 'POST') {
+  if (req.method === 'POST') {
     const storedConfig = await store.get(CONFIG_KEY, { type: 'json' }).catch(() => null)
     const existingConfig = mergeWithDefault(storedConfig || DEFAULT_CONFIG)
 
-    if (!event.body) {
-      return jsonResponse(400, { message: 'リクエストボディが空です。' })
-    }
-
     let payload
     try {
-      payload = JSON.parse(event.body)
+      payload = await req.json()
     } catch {
       return jsonResponse(400, { message: 'JSON形式が正しくありません。' })
+    }
+
+    if (!payload || typeof payload !== 'object') {
+      return jsonResponse(400, { message: 'リクエストボディが空です。' })
     }
 
     if (!payload || typeof payload !== 'object') {
