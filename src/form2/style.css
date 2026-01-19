@@ -3,15 +3,26 @@
   font-family: 'Zen Kaku Gothic New', 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', system-ui,
     -apple-system, BlinkMacSystemFont, sans-serif;
   --font-heading: 'Outfit', 'Zen Kaku Gothic New', 'Noto Sans JP', sans-serif;
-  --bg: #e9ecf1;
+  /* Tropical Resort Palette */
+  --bg: #FDF6E3;
   --panel: #ffffff;
   --panel-muted: rgba(255, 255, 255, 0.96);
-  --accent: #2f3845;
-  --accent-strong: #1f2733;
-  --border: rgba(210, 214, 223, 1);
-  --text-strong: #1a2230;
-  --text-muted: #4a5566;
-  --shadow: 0 30px 70px rgba(26, 34, 48, 0.2);
+  --accent: #00A86B;
+  /* Emerald Green */
+  --accent-strong: #1A4C43;
+  /* Deep Tropical Green */
+  --border: #E6E6E6;
+  /* Light Gray */
+  --brand-teal: #0077BE;
+  /* Ocean Blue */
+  --brand-light-blue: #81D4FA;
+  /* Pastel Light Blue */
+  --text-strong: #143D36;
+  /* Deep Forest Green */
+  --text-muted: #4A665A;
+  /* Muted Green */
+  --badge: #F2F2F2;
+  --shadow: 0 30px 60px rgba(0, 119, 190, 0.12);
 }
 
 *,
@@ -48,9 +59,13 @@ body::before {
   top: 0;
   left: 0;
   right: 0;
-  height: 150px;
-  background: repeating-linear-gradient(90deg, rgba(47, 56, 69, 0.12) 0 22px, transparent 22px 44px);
-  opacity: 0.26;
+  height: 100vh;
+  /* Removed pattern, keeping container just in case or removing content if not needed, 
+     but safe to just empty it or remove styles. 
+     Let's match src/style.css's empty body::before or just clean it. 
+     For now, making it effectively invisible/empty like src/style.css (which has specific gradients but here we just want clean).
+  */
+  background: none;
   pointer-events: none;
 }
 
@@ -80,28 +95,33 @@ body::before {
   min-height: clamp(640px, 100dvh, 900px);
 }
 
-.form2::before,
+/* Coral Silhouette (Bottom Right) */
+.form2::before {
+  content: '';
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  background: url('../../public/coral.png') no-repeat center / contain;
+  opacity: 0.15;
+  bottom: -40px;
+  right: -50px;
+  top: auto;
+  border-radius: 0;
+  z-index: 0;
+}
+
+/* Mangrove Silhouette (Bottom Left) */
 .form2::after {
   content: '';
   position: absolute;
-  border-radius: 50%;
-  opacity: 0.6;
-}
-
-.form2::before {
-  width: 260px;
-  height: 260px;
-  background: rgba(47, 56, 69, 0.14);
-  top: -120px;
-  right: -80px;
-}
-
-.form2::after {
-  width: 160px;
-  height: 160px;
-  background: rgba(77, 96, 120, 0.14);
-  bottom: -80px;
-  left: -60px;
+  width: 300px;
+  height: 300px;
+  background: url('../../public/mangrove.png') no-repeat center / contain;
+  opacity: 0.12;
+  bottom: -60px;
+  left: -80px;
+  border-radius: 0;
+  z-index: 0;
 }
 
 .form2__header {
@@ -110,7 +130,7 @@ body::before {
   gap: 0.8rem;
 }
 
-.form2 > * {
+.form2>* {
   position: relative;
   z-index: 1;
 }
@@ -119,7 +139,7 @@ body::before {
   align-self: flex-start;
   padding: 0.3rem 1.2rem;
   border-radius: 999px;
-  background: rgba(47, 56, 69, 0.18);
+  background: var(--badge);
   color: var(--accent-strong);
   font-size: 0.85rem;
   letter-spacing: 0.08em;
@@ -213,18 +233,16 @@ body::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: repeating-linear-gradient(
-    135deg,
-    rgba(63, 74, 90, 0.12),
-    rgba(63, 74, 90, 0.12) 10px,
-    transparent 10px,
-    transparent 20px
-  );
+  background: repeating-linear-gradient(135deg,
+      rgba(63, 74, 90, 0.12),
+      rgba(63, 74, 90, 0.12) 10px,
+      transparent 10px,
+      transparent 20px);
   border-radius: 20px;
   pointer-events: none;
 }
 
-.form2__question--not-reflect > * {
+.form2__question--not-reflect>* {
   position: relative;
   z-index: 1;
 }
