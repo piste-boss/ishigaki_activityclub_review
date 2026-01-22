@@ -1111,12 +1111,47 @@ function createSurveyFormManager({ key, fields, questionListEl, addButton, defau
     title.textContent = `設問${index + 1}`
     header.appendChild(title)
 
+    const moveQuestion = (index, direction) => {
+      const newIndex = index + direction
+      if (newIndex < 0 || newIndex >= questions.length) return
+
+      const temp = questions[index]
+      questions[index] = questions[newIndex]
+      questions[newIndex] = temp
+
+      markDirty()
+      renderQuestions()
+    }
+
     const removeButton = document.createElement('button')
     removeButton.type = 'button'
     removeButton.className = 'admin__icon-button admin__icon-button--danger'
     removeButton.innerHTML = '<span aria-hidden="true" class="admin__icon-trash">🗑</span><span>削除</span>'
     removeButton.addEventListener('click', () => removeQuestion(question.id))
-    header.appendChild(removeButton)
+
+    const actions = document.createElement('div')
+    actions.className = 'admin__question-actions'
+
+    if (index > 0) {
+      const upButton = document.createElement('button')
+      upButton.type = 'button'
+      upButton.className = 'admin__icon-button'
+      upButton.innerHTML = '<span aria-hidden="true">↑</span><span>上へ</span>'
+      upButton.addEventListener('click', () => moveQuestion(index, -1))
+      actions.appendChild(upButton)
+    }
+
+    if (index < questions.length - 1) {
+      const downButton = document.createElement('button')
+      downButton.type = 'button'
+      downButton.className = 'admin__icon-button'
+      downButton.innerHTML = '<span aria-hidden="true">↓</span><span>下へ</span>'
+      downButton.addEventListener('click', () => moveQuestion(index, 1))
+      actions.appendChild(downButton)
+    }
+
+    actions.appendChild(removeButton)
+    header.appendChild(actions)
 
     wrapper.appendChild(header)
 
@@ -2364,7 +2399,10 @@ form.addEventListener('submit', async (event) => {
     }
   } catch (error) {
     console.error(error)
-    setStatus(error.message, 'error')
+    // Fallback: Save to local storage even if API fails
+    loadedConfig = payload
+    writeCachedConfig(payload)
+    setStatus('通信に失敗しましたが、設定をブラウザに保存しました。', 'warning')
   }
 })
 

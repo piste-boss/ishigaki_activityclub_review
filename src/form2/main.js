@@ -110,6 +110,61 @@ if (!app) {
 const FORM_KEY = app.dataset.formKey || 'form2'
 const DEFAULT_FORM = DEFAULT_FORMS[FORM_KEY] || DEFAULT_FORMS.form2
 
+const UI_STRINGS = {
+  ja: {
+    checkboxMulti: '該当するものをすべて選択してください。',
+    checkboxSingle: '最も当てはまるものを1つ選択してください。',
+    ratingNum: '1から5の段階で評価を選択してください。',
+    ratingStar: '星をタップして評価を選択してください。',
+    textHelper: '自由に回答をご記入ください。',
+    dropdownHelper: '選択肢から1つ選んでください。',
+    selectPlaceholder: '選択してください',
+    inputPlaceholder: '回答を入力してください。',
+    ratingLowNum: '1 (低い)',
+    ratingHighNum: '5 (高い)',
+    ratingLow: '低い',
+    ratingHigh: '高い',
+    ratingUnit: '点',
+    required: '必須',
+    optional: '任意',
+    errSelect: '選択肢を選んでください。',
+    errCheckbox: '該当する項目を選択してください。',
+    errRating: '評価を選択してください。',
+    errText: '回答を入力してください。',
+    errUnanswered: '未回答の必須項目があります。',
+    msgSending: '回答を送信中...',
+    msgSendFail: '回答の送信に失敗しました。時間をおいて再度お試しください。',
+  },
+  en: {
+    checkboxMulti: 'Please select all applicable items.',
+    checkboxSingle: 'Please select the most applicable item.',
+    ratingNum: 'Please select a rating from 1 to 5.',
+    ratingStar: 'Tap a star to select your rating.',
+    textHelper: 'This is a free text field. Please write whatever you feel.',
+    dropdownHelper: 'Please select one from the dropdown.',
+    selectPlaceholder: 'Please select',
+    inputPlaceholder: 'Please enter your response.',
+    ratingLowNum: '1 (Low)',
+    ratingHighNum: '5 (High)',
+    ratingLow: 'Low',
+    ratingHigh: 'High',
+    ratingUnit: ' points',
+    required: 'Required',
+    optional: 'Optional',
+    errSelect: 'Please select an option.',
+    errCheckbox: 'Please select applicable items.',
+    errRating: 'Please select a rating.',
+    errText: 'Please enter a value.',
+    errUnanswered: 'There are unanswered required fields.',
+    msgSending: 'Sending survey results...',
+    msgSendFail: 'Failed to submit answers. Please try again later.',
+  }
+}
+
+const LANG_MAP = { form1: 'ja', form2: 'en', form3: 'ja' }
+const CURRENT_LANG = LANG_MAP[FORM_KEY] || 'en'
+const t = (key) => UI_STRINGS[CURRENT_LANG]?.[key] || UI_STRINGS.en[key]
+
 const titleEl = app.querySelector('[data-role="title"]')
 const leadEl = app.querySelector('[data-role="lead"]')
 const questionListEl = app.querySelector('[data-role="question-list"]')
@@ -261,19 +316,19 @@ const normalizeQuestions = (questions = []) => {
 
 const describeQuestion = (question) => {
   if (question.type === 'checkbox') {
-    if (question.allowMultiple) return 'Please select all applicable items.'
-    return 'Please select the most applicable item.'
+    if (question.allowMultiple) return t('checkboxMulti')
+    return t('checkboxSingle')
   }
   if (question.type === 'rating') {
     if (question.ratingStyle === 'numbers') {
-      return 'Please select a rating from 1 to 5.'
+      return t('ratingNum')
     }
-    return 'Tap a star to select your rating.'
+    return t('ratingStar')
   }
   if (question.type === 'text') {
-    return 'This is a free text field. Please write whatever you feel.'
+    return t('textHelper')
   }
-  return 'Please select one from the dropdown.'
+  return t('dropdownHelper')
 }
 
 const buildDropdown = (question, statusNode) => {
@@ -283,7 +338,7 @@ const buildDropdown = (question, statusNode) => {
 
   const placeholder = document.createElement('option')
   placeholder.value = ''
-  placeholder.textContent = 'Please select'
+  placeholder.textContent = t('selectPlaceholder')
   select.appendChild(placeholder)
 
   question.options.forEach((option) => {
@@ -340,7 +395,7 @@ const buildTextInput = (question, statusNode) => {
   const textarea = document.createElement('textarea')
   textarea.className = 'form2__textarea'
   textarea.rows = 4
-  textarea.placeholder = question.placeholder || 'Please enter your response.'
+  textarea.placeholder = question.placeholder || t('inputPlaceholder')
   textarea.dataset.questionControl = question.id
   textarea.addEventListener('input', () => {
     if ((textarea.value || '').trim()) {
@@ -366,9 +421,9 @@ const buildRatingControls = ({ mode = 'stars' } = {}) => {
   const guides = document.createElement('div')
   guides.className = 'form2__rating-guides'
   const lowGuide = document.createElement('span')
-  lowGuide.textContent = mode === 'numbers' ? '1 (Low)' : 'Low'
+  lowGuide.textContent = mode === 'numbers' ? t('ratingLowNum') : t('ratingLow')
   const highGuide = document.createElement('span')
-  highGuide.textContent = mode === 'numbers' ? '5 (High)' : 'High'
+  highGuide.textContent = mode === 'numbers' ? t('ratingHighNum') : t('ratingHigh')
   guides.append(lowGuide, highGuide)
   container.appendChild(guides)
 
@@ -381,7 +436,7 @@ const buildRatingControls = ({ mode = 'stars' } = {}) => {
     button.type = 'button'
     button.className = 'form2__rating-button'
     button.dataset.score = String(score)
-    button.setAttribute('aria-label', `${score} points`)
+    button.setAttribute('aria-label', `${score}${t('ratingUnit')}`)
     if (mode === 'numbers') {
       button.classList.add('form2__rating-button--number')
       button.textContent = String(score)
@@ -417,7 +472,7 @@ const renderQuestions = () => {
 
     const badge = document.createElement('span')
     badge.className = 'form2__badge'
-    badge.textContent = question.required ? 'Required' : 'Optional'
+    badge.textContent = question.required ? t('required') : t('optional')
     heading.appendChild(badge)
     questionCard.appendChild(heading)
 
@@ -595,13 +650,13 @@ const collectAnswers = () => {
       value = ref.selectEl?.value || ''
       if (ref.required && !value) {
         errors.push(questionId)
-        setQuestionError(ref.statusEl, 'Please select an option.')
+        setQuestionError(ref.statusEl, t('errSelect'))
       }
     } else if (ref.type === 'checkbox') {
       const selected = ref.inputs.filter((input) => input.checked).map((input) => input.value)
       if (ref.required && selected.length === 0) {
         errors.push(questionId)
-        setQuestionError(ref.statusEl, 'Please select applicable items.')
+        setQuestionError(ref.statusEl, t('errCheckbox'))
       }
       if (!ref.allowMultiple && selected.length > 1) {
         selected.splice(1)
@@ -611,14 +666,14 @@ const collectAnswers = () => {
       const score = ref.rating?.currentScore ?? 0
       if (ref.required && !score) {
         errors.push(questionId)
-        setQuestionError(ref.statusEl, 'Please select a rating.')
+        setQuestionError(ref.statusEl, t('errRating'))
       }
       value = score
     } else {
       const textValue = (ref.textEl?.value || '').trim()
       if (ref.required && !textValue) {
         errors.push(questionId)
-        setQuestionError(ref.statusEl, 'Please enter a value.')
+        setQuestionError(ref.statusEl, t('errText'))
       }
       value = textValue
     }
@@ -735,7 +790,7 @@ submitButton?.addEventListener('click', async () => {
   if (isSubmitting) return
   const { errors, answers, answersOrdered } = collectAnswers()
   if (errors.length > 0) {
-    setStatus('There are unanswered required fields.', 'error')
+    setStatus(t('errUnanswered'), 'error')
     return
   }
 
@@ -747,7 +802,7 @@ submitButton?.addEventListener('click', async () => {
 
   try {
     if (hasEndpoint) {
-      setStatus('Sending survey results...')
+      setStatus(t('msgSending'))
       await sendSurveyResults(answers, answersOrdered, submissionTimestamp, responseId)
     }
     setStatus('')
@@ -757,7 +812,7 @@ submitButton?.addEventListener('click', async () => {
     redirectToGenerator(submissionTimestamp, responseId)
   } catch (error) {
     console.error(error)
-    setStatus(error.message || 'Failed to submit answers. Please try again later.', 'error')
+    setStatus(error.message || t('msgSendFail'), 'error')
   } finally {
     isSubmitting = false
     submitButton.disabled = false
